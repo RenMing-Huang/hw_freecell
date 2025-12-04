@@ -35,14 +35,20 @@ MAX_CONCURRENT=${MAX_CONCURRENT:-5}
 
 # Preprocess the dataset into framework-ready format
 PROCESSED_DATA="/tmp/freecell_gpt_oss_$(date +%s).jsonl"
+export PROCESSED_DATA
+export DATASET_PATH
 
 echo "📊 Preprocessing dataset for gpt-oss..."
 python3 - <<'PY'
-import os, json
+import os
 from internbootcamp.bootcamps.freecell.freecell_instruction_generator import FreecellInstructionGenerator
 
 raw = os.environ.get('DATASET_PATH')
 out = os.environ.get('PROCESSED_DATA')
+if not raw:
+  raise RuntimeError("DATASET_PATH env not set")
+if not out:
+  raise RuntimeError("PROCESSED_DATA env not set")
 FreecellInstructionGenerator.batch_process(raw, out)
 PY
 
