@@ -2,6 +2,7 @@ import json
 import os
 from typing import Dict, Any, Optional, List
 from internbootcamp.src.base_instruction_generator import BaseInstructionGenerator
+from internbootcamp.utils.freecell.path_utils import resolve_image_paths
 
 
 class FreecellInstructionGenerator(BaseInstructionGenerator):
@@ -33,7 +34,7 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
                 if "free_cell" in item.get("data_id", "")
             ]
     
-    def case_generator(self) -> Dict[str, Any]:
+    def case_generator(self):
         """
         Generate evaluation cases from raw data.
         
@@ -66,17 +67,29 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
                 "images": item.get("images", [])
             }
     
-    def prompt_func(self, identity: Dict[str, Any]) -> str:
+    def prompt_func(self, identity: Dict[str, Any]) -> List[Dict[str, str]]:
         """
-        Generate prompt from identity.
-        
-        Args:
-            identity: Task information
-            
-        Returns:
-            str: Generated prompt (just return the question directly)
+        Generate a loop-safe, extraction-friendly prompt.
+
+        Contract:
+        - Input: identity with key 'question' (str)
+        - Output: chat messages list including a system instruction and the user question
+        - Constraint: Model should respond with a single line: "The answer is N" where N is an integer
         """
-        return identity["question"]
+        question = identity["question"]
+        system = (
+            "You are a precise FreeCell assistant. Read the question (and image if provided) "
+            "and pick exactly one option index as the final answer.\n"
+            "Output requirements:\n"
+            "- Respond with one line only in the exact format: The answer is N\n"
+            "- Do not include any other words, punctuation, or explanations\n"
+            "- Do not start a new conversation or ask follow-up questions\n"
+            "- Do not use chain-of-thought or <think> tags; keep thoughts internal"
+        )
+        return [
+            {"role": "system", "content": system},
+            {"role": "user", "content": question},
+        ]
     
     @classmethod
     def batch_process(cls, raw_data_path: str, output_path: str):
@@ -91,25 +104,19 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
         processed_data = []
         
         for identity in generator.case_generator():
-            # Generate prompt
-            prompt = generator.prompt_func(identity)
-            
+            # Generate messages
+            messages = generator.prompt_func(identity)
+
             # Ground truth for reward calculation
             ground_truth = {"answer": identity["answer"]}
-            
-            # Construct absolute image paths
-            base_image_path = "/inspire/hdd/project/robot-decision/huangrenming-253108120148/project/hw_freecell/GameQA-5K/"
-            image_paths = []
-            if identity.get("images"):
-                for img_rel in identity["images"]:
-                    image_paths.append(os.path.join(base_image_path, img_rel))
-            
+
+            # Resolve image paths relative to dataset without hard-coding absolutes
+            image_paths = resolve_image_paths(raw_data_path, identity.get("images", []))
+
             # Create evaluation format
-            # We pass 'image' field so BaseEvaluator will handle Base64 encoding
+            # When 'image' is present, BaseEvaluator will embed them as base64 automatically
             eval_item = {
-                "messages": [
-                    {"role": "user", "content": prompt}
-                ],
+                "messages": messages,
                 "image": image_paths if image_paths else None,
                 "reward_model": {
                     "ground_truth": ground_truth
@@ -118,11 +125,15 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
                     "id": identity.get("data_id"),
                     "question_id": identity.get("question_id"),
                     "images": image_paths if image_paths else None,
+                    # Useful for reporting
+                    "generator_name": cls.__name__,
                     # Add interaction_kwargs for interaction instance
                     "interaction_kwargs": {
                         "identity": ground_truth
                     }
-                }
+                },
+                # Optional: tag this dataset source for registry-based flows
+                "data_source": "freecell"
             }
             processed_data.append(eval_item)
         
