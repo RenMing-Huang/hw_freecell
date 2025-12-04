@@ -30,9 +30,25 @@ MAX_USER_TURNS=${MAX_USER_TURNS:-1}
 # 最大并发数
 MAX_CONCURRENT=${MAX_CONCURRENT:-5}
 
+# Preprocess data if needed
+PROCESSED_DATA="/tmp/freecell_processed_$(date +%s).jsonl"
+
+echo "📊 Preprocessing dataset..."
+python3 -c "
+from internbootcamp.bootcamps.freecell.freecell_instruction_generator import FreecellInstructionGenerator
+FreecellInstructionGenerator.batch_process('$DATASET_PATH', '$PROCESSED_DATA')
+"
+
+if [ $? -ne 0 ]; then
+    echo "❌ Data preprocessing failed!"
+    exit 1
+fi
+
+echo "🚀 Starting evaluation..."
+
 # 执行评测命令
 python -m internbootcamp.utils.run_evaluation \
-    --dataset-path "$DATASET_PATH" \
+    --dataset-path "$PROCESSED_DATA" \
     --output-dir "$OUTPUT_DIR" \
     --api-key "$API_KEY" \
     --api-url "$API_URL" \
@@ -44,3 +60,7 @@ python -m internbootcamp.utils.run_evaluation \
     --max-user-turns $MAX_USER_TURNS \
     --max-concurrent $MAX_CONCURRENT \
     --verbose
+
+# Clean up temporary file
+rm -f "$PROCESSED_DATA"
+echo "✅ Evaluation complete!"
