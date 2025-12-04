@@ -23,15 +23,23 @@ IMAGE_DIR="/inspire/hdd/project/robot-decision/huangrenming-253108120148/project
 IMAGE_PORT=8082
 export IMAGE_SERVER_URL="http://localhost:${IMAGE_PORT}"
 
+# 检查图片目录是否存在
+if [ ! -d "$IMAGE_DIR" ]; then
+    echo "Error: Image directory not found: $IMAGE_DIR"
+    exit 1
+fi
+
 # 启动 HTTP 服务器提供图片访问
 echo "Starting image server on port ${IMAGE_PORT}..."
-python3 -m http.server ${IMAGE_PORT} --directory "${IMAGE_DIR}" > /dev/null 2>&1 &
+python3 -m http.server ${IMAGE_PORT} --directory "${IMAGE_DIR}" > /tmp/img_server.log 2>&1 &
 IMAGE_SERVER_PID=$!
 
 # 确保脚本退出时关闭服务器
 cleanup() {
-    echo "Stopping image server (PID: ${IMAGE_SERVER_PID})..."
-    kill ${IMAGE_SERVER_PID}
+    if ps -p ${IMAGE_SERVER_PID} > /dev/null; then
+        echo "Stopping image server (PID: ${IMAGE_SERVER_PID})..."
+        kill ${IMAGE_SERVER_PID}
+    fi
 }
 trap cleanup EXIT
 
@@ -39,6 +47,8 @@ trap cleanup EXIT
 sleep 2
 if ! ps -p ${IMAGE_SERVER_PID} > /dev/null; then
     echo "Failed to start image server!"
+    echo "Server log:"
+    cat /tmp/img_server.log
     exit 1
 fi
 echo "Image server running at ${IMAGE_SERVER_URL}"
