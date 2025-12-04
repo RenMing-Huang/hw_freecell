@@ -97,38 +97,27 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
             # Ground truth for reward calculation
             ground_truth = {"answer": identity["answer"]}
             
-            # Construct messages with remote image path
-            messages = []
+            # Construct absolute image paths
             base_image_path = "/inspire/hdd/project/robot-decision/huangrenming-253108120148/project/hw_freecell/GameQA-5K/"
-            
-            if identity.get("images") and len(identity["images"]) > 0:
-                # Use the first image
-                image_rel_path = identity["images"][0]
-                full_image_path = os.path.join(base_image_path, image_rel_path)
-                
-                content_list = [
-                    {"type": "text", "text": prompt},
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"file://{full_image_path}"
-                        }
-                    }
-                ]
-                messages.append({"role": "user", "content": content_list})
-            else:
-                # Text only
-                messages.append({"role": "user", "content": prompt})
+            image_paths = []
+            if identity.get("images"):
+                for img_rel in identity["images"]:
+                    image_paths.append(os.path.join(base_image_path, img_rel))
             
             # Create evaluation format
+            # We pass 'image' field so BaseEvaluator will handle Base64 encoding
             eval_item = {
-                "messages": messages,
+                "messages": [
+                    {"role": "user", "content": prompt}
+                ],
+                "image": image_paths if image_paths else None,
                 "reward_model": {
                     "ground_truth": ground_truth
                 },
                 "extra_info": {
                     "id": identity.get("data_id"),
                     "question_id": identity.get("question_id"),
+                    "images": image_paths if image_paths else None,
                     # Add interaction_kwargs for interaction instance
                     "interaction_kwargs": {
                         "identity": ground_truth
