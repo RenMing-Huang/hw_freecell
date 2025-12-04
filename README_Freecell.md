@@ -11,6 +11,11 @@ This directory contains the implementation of the Freecell task for the RLVR fra
   - `config/freecell_interaction_config.yaml`: Configuration for the interaction class.
 - `scripts/run_freecell_eval.py`: Script to run the evaluation.
 
+> [!NOTE]
+> The evaluation script automatically handles both data formats:
+> - Original format: `question` and `answer` fields
+> - GameQA-5K format: `query` and `solution` fields
+
 ## Usage
 
 To run the evaluation, use the following command:

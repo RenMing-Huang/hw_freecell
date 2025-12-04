@@ -32,19 +32,38 @@ def main():
             continue
 
         # Construct the prompt
-        # The question already contains the state description and the question.
-        # We might want to wrap it in a user message.
-        prompt_content = item["question"]
+        # Support both "question" and "query" fields
+        prompt_content = item.get("query") or item.get("question", "")
         
-        # Add options to the prompt if they are not already there (they seem to be in the question text based on data.json)
-        # "the options are as follows:..." is in the question.
+        if not prompt_content:
+            print(f"Warning: Skipping item {item.get('data_id')} - no question/query field")
+            continue
         
         messages = [
             {"role": "user", "content": prompt_content}
         ]
         
-        # Ground truth
-        ground_truth = {"answer": item["answer"]}
+        # Ground truth - support both "answer" and "solution" fields
+        answer = item.get("solution") or item.get("answer")
+        if answer is None:
+            print(f"Warning: Skipping item {item.get('data_id')} - no answer/solution field")
+            continue
+            
+        # Convert to int if it's a string
+        try:
+            answer = int(answer)
+        except (ValueError, TypeError):
+            print(f"Warning: Could not convert answer to int for {item.get('data_id')}: {answer}")
+            continue
+        
+        ground_truth = {"answer": answer}
+        
+        # Handle images if present
+        images = item.get("images", [])
+        if images:
+            # Note: Image handling might need to be added to the evaluator
+            # For now, we'll store it in extra_info
+            pass
         
         eval_dataset.append({
             "messages": messages,
@@ -53,7 +72,8 @@ def main():
             },
             "extra_info": {
                 "id": item.get("data_id"),
-                "question_id": item.get("question_id")
+                "question_id": item.get("question_id"),
+                "images": images if images else None
             }
         })
 
