@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Dict, Any, Optional, List
 from internbootcamp.src.base_instruction_generator import BaseInstructionGenerator
 
@@ -96,11 +97,32 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
             # Ground truth for reward calculation
             ground_truth = {"answer": identity["answer"]}
             
+            # Construct messages with remote image path
+            messages = []
+            base_image_path = "/inspire/hdd/project/robot-decision/huangrenming-253108120148/project/hw_freecell/GameQA-5K/"
+            
+            if identity.get("images") and len(identity["images"]) > 0:
+                # Use the first image
+                image_rel_path = identity["images"][0]
+                full_image_path = os.path.join(base_image_path, image_rel_path)
+                
+                content_list = [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"file://{full_image_path}"
+                        }
+                    }
+                ]
+                messages.append({"role": "user", "content": content_list})
+            else:
+                # Text only
+                messages.append({"role": "user", "content": prompt})
+            
             # Create evaluation format
             eval_item = {
-                "messages": [
-                    {"role": "user", "content": prompt}
-                ],
+                "messages": messages,
                 "reward_model": {
                     "ground_truth": ground_truth
                 },
