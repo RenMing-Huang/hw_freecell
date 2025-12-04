@@ -93,18 +93,25 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
             # Generate prompt
             prompt = generator.prompt_func(identity)
             
+            # Ground truth for reward calculation
+            ground_truth = {"answer": identity["answer"]}
+            
             # Create evaluation format
             eval_item = {
                 "messages": [
                     {"role": "user", "content": prompt}
                 ],
                 "reward_model": {
-                    "ground_truth": {"answer": identity["answer"]}
+                    "ground_truth": ground_truth
                 },
                 "extra_info": {
                     "id": identity.get("data_id"),
                     "question_id": identity.get("question_id"),
-                    "images": identity.get("images") if identity.get("images") else None
+                    "images": identity.get("images") if identity.get("images") else None,
+                    # Add interaction_kwargs for interaction instance
+                    "interaction_kwargs": {
+                        "identity": ground_truth
+                    }
                 }
             }
             processed_data.append(eval_item)
