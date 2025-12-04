@@ -24,5 +24,6 @@ class FreecellEvaluator(BaseEvaluator):
             base_url=self.client.base_url, 
             api_key=self.client.api_key, 
             default_headers=self.api_extra_headers, 
-            http_client=httpx.AsyncClient(verify=False, timeout=timeout)
+            http_client=httpx.AsyncClient(verify=False, timeout=timeout),
+            timeout=float(api_timeout)
         )

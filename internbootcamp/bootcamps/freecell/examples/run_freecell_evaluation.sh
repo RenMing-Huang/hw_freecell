@@ -13,8 +13,35 @@ OUTPUT_DIR="${OUTPUT_DIR:-outputs/freecell}"
 API_KEY="${API_KEY:-EMPTY}"
 API_URL="${API_URL:-http://localhost:8000/v1}"
 API_MODEL="${API_MODEL:-Qwen/Qwen3-VL-2B-Instruct}"
-# 设置 API 超时时间 (秒)
-export API_TIMEOUT="${API_TIMEOUT:-30}"
+# 设置 API 超时时间 (秒) - 增加到 120s 以支持多模态处理
+export API_TIMEOUT="${API_TIMEOUT:-120}"
+# 限制图片大小 (bytes) - 5MB
+export MAX_IMAGE_SIZE="${MAX_IMAGE_SIZE:-5000000}"
+
+# 图片目录
+IMAGE_DIR="/inspire/hdd/project/robot-decision/huangrenming-253108120148/project/hw_freecell/GameQA-5K/"
+IMAGE_PORT=8082
+export IMAGE_SERVER_URL="http://localhost:${IMAGE_PORT}"
+
+# 启动 HTTP 服务器提供图片访问
+echo "Starting image server on port ${IMAGE_PORT}..."
+python3 -m http.server ${IMAGE_PORT} --directory "${IMAGE_DIR}" > /dev/null 2>&1 &
+IMAGE_SERVER_PID=$!
+
+# 确保脚本退出时关闭服务器
+cleanup() {
+    echo "Stopping image server (PID: ${IMAGE_SERVER_PID})..."
+    kill ${IMAGE_SERVER_PID}
+}
+trap cleanup EXIT
+
+# 检查服务器是否启动
+sleep 2
+if ! ps -p ${IMAGE_SERVER_PID} > /dev/null; then
+    echo "Failed to start image server!"
+    exit 1
+fi
+echo "Image server running at ${IMAGE_SERVER_URL}"
 
 # 评测器类 (使用框架的 BaseEvaluator)
 # 评测器类 (使用自定义的 FreecellEvaluator 以支持超时配置)
