@@ -33,20 +33,15 @@ class FreecellRewardManager(BaseRewardCalculator):
             matches = re.findall(pattern, text, re.IGNORECASE)
             if matches:
                 return int(matches[-1])
-        # 3) Fallback: explicit patterns anywhere
+        # 3) Fallback: explicit patterns anywhere in full output
         for pattern in explicit_patterns:
             matches = re.findall(pattern, output_str, re.IGNORECASE)
             if matches:
                 return int(matches[-1])
-        # 4) If no explicit pattern, find the last integer in answer segment
-        matches = re.findall(r"\d+", text)
-        if matches:
-            return int(matches[-1])
-        # 5) Final fallback: last integer anywhere
-        matches = re.findall(r"\d+", output_str)
-        if matches:
-            return int(matches[-1])
-            
+        
+        # NOTE: We intentionally do NOT fall back to matching any random digit.
+        # This ensures format score is only awarded when model follows explicit format.
+        # Matching any last digit would reward malformed outputs or loops.
         return None
 
     @classmethod

@@ -5,13 +5,22 @@ from internbootcamp.bootcamps.freecell.freecell_interaction import FreecellInter
 
 class TestFreecellTask(unittest.TestCase):
     def test_reward_extraction(self):
-        # Test extraction logic
+        # Test extraction logic - only explicit patterns work
         self.assertEqual(FreecellRewardManager.extract_output("The answer is 1"), 1)
         self.assertEqual(FreecellRewardManager.extract_output("Option 3 is correct"), 3)
         self.assertEqual(FreecellRewardManager.extract_output("I choose 7"), 7)
         self.assertEqual(FreecellRewardManager.extract_output("The answer is option 2."), 2)
-        self.assertEqual(FreecellRewardManager.extract_output("Some reasoning... therefore 5"), 5)
+        self.assertEqual(FreecellRewardManager.extract_output("select 5"), 5)
+        
+        # These should NOT match - no fallback to random numbers
+        self.assertIsNone(FreecellRewardManager.extract_output("Some reasoning... therefore 5"))
         self.assertIsNone(FreecellRewardManager.extract_output("No answer here"))
+        self.assertIsNone(FreecellRewardManager.extract_output("Just 3 random numbers like 4 and 5"))
+        self.assertIsNone(FreecellRewardManager.extract_output(""))
+        
+        # Test with <think> blocks - answer section should be prioritized
+        self.assertEqual(FreecellRewardManager.extract_output(
+            "<think>Option 2 looks good</think>\nThe answer is 3"), 3)
 
     def test_reward_scoring(self):
         # Test scoring logic (0.1 format + 0.9 answer)
@@ -25,8 +34,12 @@ class TestFreecellTask(unittest.TestCase):
         score = FreecellRewardManager.verify_score("The answer is 2", identity, format_score=0.1)
         self.assertAlmostEqual(score, 0.1)
         
-        # No answer extracted
+        # No answer extracted (malformed output) - should get 0
         score = FreecellRewardManager.verify_score("No answer", identity, format_score=0.1)
+        self.assertAlmostEqual(score, 0.0)
+        
+        # Random numbers but no explicit answer - should get 0
+        score = FreecellRewardManager.verify_score("I think 5 is the answer maybe 3", identity, format_score=0.1)
         self.assertAlmostEqual(score, 0.0)
 
     def test_interaction(self):

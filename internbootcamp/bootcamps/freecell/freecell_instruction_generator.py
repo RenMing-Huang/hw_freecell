@@ -69,36 +69,29 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
     
     def prompt_func(self, identity: Dict[str, Any]) -> List[Dict[str, str]]:
         """
-        Generate a loop-safe prompt that allows concise CoT but enforces a strict final answer format.
+        Generate a professional, loop-safe prompt for FreeCell questions.
 
         Contract:
         - Input: identity with key 'question' (str)
-        - Output: single user message so image-flow keeps instructions
-        - Final line must be exactly: The answer is N (N is an integer). No extra numbers after it.
-        - If reasoning is needed, put it inside <think>...</think> above the final line.
+        - Output: single user message with clear format requirements
+        - Final answer format: "The answer is N" (N is integer option index)
+        - Optional reasoning in <think>...</think> block
         """
         question = identity["question"]
         instruction = (
-            "Task: Read the question (and image if provided) and select exactly one option index.\n\n"
-            "If you need to reason, put your brief reasoning inside <think>...</think> as its own block. Keep it concise.\n"
-            "Then, on a new final line, output exactly: The answer is N\n\n"
-            "Formatting rules (strict):\n"
-            "- Output exactly one final line in the format: The answer is N\n"
-            "- Do not include any other words or punctuation on the final line\n"
-            "- Do not output any additional numbers outside the <think> block except N on the final line\n"
-            "- Do not place any content after the final line\n"
-            "- Do not ask follow-up questions or start a new conversation\n\n"
-            "Examples (follow strictly):\n"
-            "Correct:\n"
-            "<think>We compare options 2 and 3; 3 frees a column.</think>\nThe answer is 3\n\n"
-            "Also correct (no reasoning):\n"
+            "You are solving a FreeCell game question. "
+            "Analyze the game state and select the correct option.\n\n"
+            "**Format Requirements:**\n"
+            "- If you need to reason, put it inside <think>...</think>\n"
+            "- Your final answer MUST be exactly: The answer is N\n"
+            "  (N is the option number, nothing else on that line)\n"
+            "- Do NOT output anything after the final answer line\n\n"
+            "**Example:**\n"
+            "<think>Option 2 moves a card to foundation.</think>\n"
             "The answer is 2\n\n"
-            "Incorrect (extra text on final line):\n"
-            "The answer is 4 because it frees a column\n\n"
-            "Incorrect (two numbers after final line or extra lines after final line):\n"
-            "<think>2 vs 3</think>\nThe answer is 3\n2\n"
+            "Question:\n"
         )
-        content = f"{instruction}\n\nQuestion:\n{question}"
+        content = f"{instruction}{question}"
         return [{"role": "user", "content": content}]
     
     @classmethod
