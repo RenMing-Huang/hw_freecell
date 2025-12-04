@@ -102,13 +102,13 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
         return [{"role": "user", "content": content}]
     
     @classmethod
-    def batch_process(cls, raw_data_path: str, output_path: str):
+    def batch_process(cls, raw_data_path: str, output_path: Optional[str] = None):
         """
         Batch process raw data and save to output file.
         
         Args:
             raw_data_path: Path to raw data file
-            output_path: Path to save processed data
+            output_path: Path to save processed data; if None, returns the processed list
         """
         generator = cls(raw_data_path)
         processed_data = []
@@ -147,14 +147,18 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
             }
             processed_data.append(eval_item)
         
-        # Save to output file
-        with open(output_path, 'w', encoding='utf-8') as f:
-            if output_path.endswith('.jsonl'):
-                for item in processed_data:
-                    f.write(json.dumps(item, ensure_ascii=False) + '\n')
-            else:
-                json.dump(processed_data, f, ensure_ascii=False, indent=2)
-        
-        print(f"✅ Processed {len(processed_data)} items from {raw_data_path}")
-        print(f"✅ Saved to {output_path}")
-        return len(processed_data)
+        # Save or return
+        if output_path:
+            with open(output_path, 'w', encoding='utf-8') as f:
+                if output_path.endswith('.jsonl'):
+                    for item in processed_data:
+                        f.write(json.dumps(item, ensure_ascii=False) + '\n')
+                else:
+                    json.dump(processed_data, f, ensure_ascii=False, indent=2)
+            print(f"✅ Processed {len(processed_data)} items from {raw_data_path}")
+            print(f"✅ Saved to {output_path}")
+            return len(processed_data)
+        else:
+            print(f"✅ Processed {len(processed_data)} items from {raw_data_path}")
+            print(f"ℹ️ output_path is None; returning processed data list instead of writing to file")
+            return processed_data
