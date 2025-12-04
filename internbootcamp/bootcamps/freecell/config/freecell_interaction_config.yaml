@@ -1,0 +1,4 @@
+interaction:
+  - name: "freecell"
+    class_name: "internbootcamp.bootcamps.freecell.freecell_interaction.FreecellInteraction"
+    config: {}
