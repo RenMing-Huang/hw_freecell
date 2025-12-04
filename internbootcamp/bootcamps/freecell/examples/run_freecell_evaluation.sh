@@ -13,9 +13,12 @@ OUTPUT_DIR="${OUTPUT_DIR:-outputs/freecell}"
 API_KEY="${API_KEY:-EMPTY}"
 API_URL="${API_URL:-http://localhost:8000/v1}"
 API_MODEL="${API_MODEL:-Qwen/Qwen3-VL-2B-Instruct}"
+# 设置 API 超时时间 (秒)
+export API_TIMEOUT="${API_TIMEOUT:-30}"
 
 # 评测器类 (使用框架的 BaseEvaluator)
-EVALUATOR_CLASS="internbootcamp.src.base_evaluator.BaseEvaluator"
+# 评测器类 (使用自定义的 FreecellEvaluator 以支持超时配置)
+EVALUATOR_CLASS="internbootcamp.bootcamps.freecell.freecell_evaluator.FreecellEvaluator"
 
 # 奖励计算器类
 REWARD_CALCULATOR_CLASS="internbootcamp.bootcamps.freecell.freecell_reward_manager.FreecellRewardManager"

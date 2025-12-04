@@ -107,7 +107,6 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
                 "extra_info": {
                     "id": identity.get("data_id"),
                     "question_id": identity.get("question_id"),
-                    "images": identity.get("images") if identity.get("images") else None,
                     # Add interaction_kwargs for interaction instance
                     "interaction_kwargs": {
                         "identity": ground_truth
