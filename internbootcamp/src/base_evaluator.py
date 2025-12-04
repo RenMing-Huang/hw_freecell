@@ -90,6 +90,7 @@ class BaseEvaluator:
         max_assistant_turns: int = None,
         max_user_turns: int = None,
         tokenizer_path = None,
+        api_timeout: int = 300,
         **kwargs,
         ):
         self.api_model = api_model
@@ -98,7 +99,19 @@ class BaseEvaluator:
         self.verify_correction_kwargs = verify_correction_kwargs or {}
         self.max_assistant_turns = max_assistant_turns
         self.max_user_turns = max_user_turns
-        self.client = openai.AsyncOpenAI(base_url=api_url, api_key=api_key, default_headers=api_extra_headers, http_client=httpx.AsyncClient(verify=False))
+        # Configure timeout for httpx client to prevent indefinite hangs
+        timeout = httpx.Timeout(
+            connect=60.0,      # Time to establish connection
+            read=float(api_timeout),  # Time to read response (configurable)
+            write=60.0,        # Time to send request
+            pool=60.0          # Time to acquire connection from pool
+        )
+        self.client = openai.AsyncOpenAI(
+            base_url=api_url, 
+            api_key=api_key, 
+            default_headers=api_extra_headers, 
+            http_client=httpx.AsyncClient(verify=False, timeout=timeout)
+        )
         self.bootcamp_registry: Dict[str, dict] = {}
         self.reward_calculator = reward_calculator
         self.tokenizer_path = tokenizer_path
