@@ -69,27 +69,37 @@ class FreecellInstructionGenerator(BaseInstructionGenerator):
     
     def prompt_func(self, identity: Dict[str, Any]) -> List[Dict[str, str]]:
         """
-        Generate a loop-safe, extraction-friendly prompt.
+        Generate a loop-safe prompt that allows concise CoT but enforces a strict final answer format.
 
         Contract:
         - Input: identity with key 'question' (str)
-        - Output: chat messages list including a system instruction and the user question
-        - Constraint: Model should respond with a single line: "The answer is N" where N is an integer
+        - Output: single user message so image-flow keeps instructions
+        - Final line must be exactly: The answer is N (N is an integer). No extra numbers after it.
+        - If reasoning is needed, put it inside <think>...</think> above the final line.
         """
         question = identity["question"]
-        system = (
-            "You are a precise FreeCell assistant. Read the question (and image if provided) "
-            "and pick exactly one option index as the final answer.\n"
-            "Output requirements:\n"
-            "- Respond with one line only in the exact format: The answer is N\n"
-            "- Do not include any other words, punctuation, or explanations\n"
-            "- Do not start a new conversation or ask follow-up questions\n"
-            "- Do not use chain-of-thought or <think> tags; keep thoughts internal"
+        instruction = (
+            "Task: Read the question (and image if provided) and select exactly one option index.\n\n"
+            "If you need to reason, put your brief reasoning inside <think>...</think> as its own block. Keep it concise.\n"
+            "Then, on a new final line, output exactly: The answer is N\n\n"
+            "Formatting rules (strict):\n"
+            "- Output exactly one final line in the format: The answer is N\n"
+            "- Do not include any other words or punctuation on the final line\n"
+            "- Do not output any additional numbers outside the <think> block except N on the final line\n"
+            "- Do not place any content after the final line\n"
+            "- Do not ask follow-up questions or start a new conversation\n\n"
+            "Examples (follow strictly):\n"
+            "Correct:\n"
+            "<think>We compare options 2 and 3; 3 frees a column.</think>\nThe answer is 3\n\n"
+            "Also correct (no reasoning):\n"
+            "The answer is 2\n\n"
+            "Incorrect (extra text on final line):\n"
+            "The answer is 4 because it frees a column\n\n"
+            "Incorrect (two numbers after final line or extra lines after final line):\n"
+            "<think>2 vs 3</think>\nThe answer is 3\n2\n"
         )
-        return [
-            {"role": "system", "content": system},
-            {"role": "user", "content": question},
-        ]
+        content = f"{instruction}\n\nQuestion:\n{question}"
+        return [{"role": "user", "content": content}]
     
     @classmethod
     def batch_process(cls, raw_data_path: str, output_path: str):

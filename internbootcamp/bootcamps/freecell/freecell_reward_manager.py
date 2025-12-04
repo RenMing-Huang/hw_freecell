@@ -7,10 +7,18 @@ class FreecellRewardManager(BaseRewardCalculator):
     def extract_output(output_str: str):
         """
         Extract the selected option index from the model output.
-        Assumes the answer is a number corresponding to one of the options.
+        Prefers parsing the segment after the last </think> (answer section),
+        then falls back to the whole output. Assumes the answer is an integer index.
         """
         if not output_str:
             return None
+        text = output_str
+        # 1) Prefer only the segment after the last </think>
+        if "</think>" in output_str:
+            try:
+                text = output_str.rsplit("</think>", 1)[1]
+            except Exception:
+                text = output_str
         
         # Look for patterns like "The answer is X", "Option X", or just the last number
         # We prioritize explicit statements
@@ -20,15 +28,21 @@ class FreecellRewardManager(BaseRewardCalculator):
             r"choose (\d+)",
             r"select (\d+)"
         ]
-        
+        # 2) Try explicit patterns in answer segment first
+        for pattern in explicit_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            if matches:
+                return int(matches[-1])
+        # 3) Fallback: explicit patterns anywhere
         for pattern in explicit_patterns:
             matches = re.findall(pattern, output_str, re.IGNORECASE)
             if matches:
                 return int(matches[-1])
-        
-        # If no explicit pattern, try to find the last number that is a valid option index (1-8 usually)
-        # But simply taking the last number might be risky if the explanation contains numbers.
-        # Let's stick to a simple heuristic: find the last integer in the text.
+        # 4) If no explicit pattern, find the last integer in answer segment
+        matches = re.findall(r"\d+", text)
+        if matches:
+            return int(matches[-1])
+        # 5) Final fallback: last integer anywhere
         matches = re.findall(r"\d+", output_str)
         if matches:
             return int(matches[-1])
