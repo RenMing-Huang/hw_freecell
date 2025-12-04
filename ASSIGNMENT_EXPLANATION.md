@@ -47,13 +47,18 @@
     - `freecell_reward_manager.py`: 实现了如何从回复中找数字，以及如何打分。
     - `freecell_interaction.py`: 实现了简单的一问一答流程。
     - `config/freecell_interaction_config.yaml`: 交互模块的配置文件。
-    - `freecell_evaluator.py`: 配置了评测器。
+    - `examples/run_freecell_evaluation.sh`: 标准评测脚本。
 
-2.  **编写了运行脚本 `scripts/run_freecell_eval.py`**：
-    - 这个脚本会自动读取 `Game-RL` 里的 Freecell 数据。
-    - 把它转换成评测器需要的格式。
-    - 调用模型（可以是 API 也可以是本地模型）进行测试。
-    - 输出结果到 `outputs/freecell`。
+2.  **使用框架标准工具**：
+    - 直接使用 `BaseEvaluator`，不需要自定义子类。
+    - 使用 `internbootcamp.utils.run_evaluation` 作为统一评测入口。
+    - 通过命令行参数传入 `reward_calculator_class` 和 `interaction_config`。
+
+3.  **数据格式兼容**：
+    - 支持原始 Game-RL 格式（`question` 和 `answer`）。
+    - 支持 GameQA-5K 格式（`query` 和 `solution`）。
+    - 自动过滤 `data_id` 包含 "free_cell" 的任务。
+
 
 ## 4. 如何理解“验证”？ (Verification)
 
@@ -69,4 +74,27 @@
 - **黑盒**：大模型。
 - **输出**：模型得分。
 
-你现在可以直接运行 `scripts/run_freecell_eval.py` 来体验这个“自动判题”的过程。
+你现在可以运行以下命令来体验这个"自动判题"的过程：
+
+```bash
+# 设置环境变量
+export API_KEY="你的API密钥"
+export API_URL="你的API地址"
+export API_MODEL="你的模型名"
+export DATASET_PATH="数据集路径"
+
+# 运行评测
+bash internbootcamp/bootcamps/freecell/examples/run_freecell_evaluation.sh
+```
+
+或者直接使用框架提供的评测工具：
+
+```bash
+python -m internbootcamp.utils.run_evaluation \
+    --dataset-path "数据集路径" \
+    --reward-calculator-class "internbootcamp.bootcamps.freecell.freecell_reward_manager.FreecellRewardManager" \
+    --interaction-config "internbootcamp/bootcamps/freecell/config/freecell_interaction_config.yaml" \
+    --api-key "你的API密钥" \
+    --api-url "你的API地址" \
+    --api-model "你的模型名"
+```
