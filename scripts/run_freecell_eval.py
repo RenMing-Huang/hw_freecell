@@ -27,6 +27,10 @@ def main():
     
     eval_dataset = []
     for item in raw_dataset:
+        # Filter for free_cell tasks
+        if "free_cell" not in item.get("data_id", ""):
+            continue
+
         # Construct the prompt
         # The question already contains the state description and the question.
         # We might want to wrap it in a user message.

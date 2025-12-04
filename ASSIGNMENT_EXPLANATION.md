@@ -46,6 +46,7 @@
 1.  **创建了 `internbootcamp/bootcamps/freecell/` 目录**：
     - `freecell_reward_manager.py`: 实现了如何从回复中找数字，以及如何打分。
     - `freecell_interaction.py`: 实现了简单的一问一答流程。
+    - `config/freecell_interaction_config.yaml`: 交互模块的配置文件。
     - `freecell_evaluator.py`: 配置了评测器。
 
 2.  **编写了运行脚本 `scripts/run_freecell_eval.py`**：

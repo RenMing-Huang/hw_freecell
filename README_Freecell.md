@@ -8,6 +8,7 @@ This directory contains the implementation of the Freecell task for the RLVR fra
   - `freecell_reward_manager.py`: Handles answer extraction and scoring.
   - `freecell_interaction.py`: Handles the interaction loop (single-turn QA).
   - `freecell_evaluator.py`: Configures the evaluator.
+  - `config/freecell_interaction_config.yaml`: Configuration for the interaction class.
 - `scripts/run_freecell_eval.py`: Script to run the evaluation.
 
 ## Usage
